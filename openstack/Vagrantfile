@@ -2,78 +2,80 @@
 # vi: set ft=ruby :
 
 # max number of nodes
-N = 2
+N = 3
 
 Vagrant.configure("2") do |config|
     ####################
     #    controller    #
     ####################
-    config.vm.define "openstack-test1" do |cfg|
-      # ubuntu/focal64
-      # bento/ubuntu-22.04
-      cfg.vm.box = "ubuntu/focal64" 
-      
-      cfg.vm.provider "virtualbox" do |vb|
-        vb.name = "controller"
-        vb.cpus = 4 
-        vb.memory = 8192
-        vb.customize ["modifyvm", :id, "--groups", "/openstack-server"] 
-      end
-     
-      cfg.vm.host_name = "controller"
-      cfg.vm.network "private_network", ip: "192.168.1.51"
-      cfg.vm.network "forwarded_port", guest: 22, host: "60051", auto_correct: true, id: "ssh"
-      cfg.vm.network "public_network", type: "dhcp"
-      cfg.vm.synced_folder "../data", "/vagrant", disabled: true
-
-      cfg.vm.provision "shell", path: "init.sh", args: ["controller"]
-      # cfg.vm.provision "shell", path: "init.sh"
-    end
-
-    ####################
-    #      compute     #
-    ####################
     (1..N).each do |i|
-      config.vm.define "openstack-test#{i+1}" do |cfg|
-        cfg.vm.box = "ubuntu/focal64" 
-      
+      config.vm.define "openstack-controller-#{i}" do |cfg|
+        cfg.vm.box = "rockylinux/9"
+        cfg.vm.box_url = "https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-Vagrant-Vbox-9.5-20241118.0.x86_64.box" 
+        #cfg.vm.box_version = "4.0.0"     
         cfg.vm.provider "virtualbox" do |vb|
-          vb.name = "compute#{i}"
+          vb.name = "controller-#{i}"
           vb.cpus = 2 
           vb.memory = 2048
           vb.customize ["modifyvm", :id, "--groups", "/openstack-server"] 
         end
      
-        cfg.vm.host_name = "compute#{i}"
-        cfg.vm.network "private_network", ip: "192.168.1.6#{i}"
-        cfg.vm.network "forwarded_port", guest: 22, host: "6006#{i}", auto_correct: true, id: "ssh"
+        cfg.vm.host_name = "controller-#{i}"
+        cfg.vm.network "private_network", ip: "192.168.1.2#{i}"
+        cfg.vm.network "forwarded_port", guest: 22, host: "2002#{i}", auto_correct: true, id: "ssh"
         cfg.vm.network "public_network", type: "dhcp"
         cfg.vm.synced_folder "../data", "/vagrant", disabled: true
 
-        cfg.vm.provision "shell", path: "init.sh", args: ["compute"]
+        #cfg.vm.provision "shell", path: "init.sh", args: ["controller"]
       end
     end
 
     ####################
+    #      compute     #
+    ####################
+    #(1..N).each do |i|
+      config.vm.define "openstack-compute" do |cfg|
+        cfg.vm.box = "rockylinux/9.5" 
+        #cfg.vm.box_version = "4.0.0" 
+        cfg.vm.box_url = "https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-Vagrant-Vbox-9.5-20241118.0.x86_64.box" 
+        cfg.vm.provider "virtualbox" do |vb|
+          vb.name = "compute"
+          vb.cpus = 2 
+          vb.memory = 2048
+          vb.customize ["modifyvm", :id, "--groups", "/openstack-server"] 
+        end
+     
+        cfg.vm.host_name = "compute"
+        cfg.vm.network "private_network", ip: "192.168.1.31"
+        cfg.vm.network "forwarded_port", guest: 22, host: "20031", auto_correct: true, id: "ssh"
+        cfg.vm.network "public_network", type: "dhcp"
+        cfg.vm.synced_folder "../data", "/vagrant", disabled: true
+
+        #cfg.vm.provision "shell", path: "init.sh", args: ["compute"]
+      end
+    #end
+
+    ####################
     #       block      #
     ####################
-    config.vm.define "openstack-test4" do |cfg|
-      cfg.vm.box = "ubuntu/focal64" 
-      
+    config.vm.define "openstack-storage" do |cfg|
+      cfg.vm.box = "rockylinux/9.5" 
+      #cfg.vm.box_version = "4.0.0" 
+      cfg.vm.box_url = "https://dl.rockylinux.org/pub/rocky/9.5/images/x86_64/Rocky-9-Vagrant-Vbox-9.5-20241118.0.x86_64.box" 
       cfg.vm.provider "virtualbox" do |vb|
-        vb.name = "block1"
+        vb.name = "storage"
         vb.cpus = 2 
         vb.memory = 2048
         vb.customize ["modifyvm", :id, "--groups", "/openstack-server"] 
       end
      
-      cfg.vm.host_name = "block"
-      cfg.vm.network "private_network", ip: "192.168.1.71"
-      cfg.vm.network "forwarded_port", guest: 22, host: "60071", auto_correct: true, id: "ssh"
+      cfg.vm.host_name = "storage"
+      cfg.vm.network "private_network", ip: "192.168.1.41"
+      cfg.vm.network "forwarded_port", guest: 22, host: "20041", auto_correct: true, id: "ssh"
       cfg.vm.network "public_network", type: "dhcp"
       cfg.vm.synced_folder "../data", "/vagrant", disabled: true
 
-      cfg.vm.provision "shell", path: "init.sh", args: ["block"]
+      #cfg.vm.provision "shell", path: "init.sh", args: ["block"]
     end
 end
 
